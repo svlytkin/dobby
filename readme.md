@@ -1,2 +1,1 @@
-№
-Dobby is free bot  
+Dobby is a free bot  
