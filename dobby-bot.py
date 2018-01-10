@@ -80,14 +80,16 @@ def sql_fetchall(sql):
     con = sqlite3.connect(DB)
     cur = con.cursor()
     cur.execute(sql)
-    con.commit()
-    return cur.fetchall()
+    rows = cur.fetchall()
+    con.close()
+    return rows
 
 def sql_commit(sql):
     con = sqlite3.connect(DB)
     cur = con.cursor()
     cur.execute(sql)
     con.commit()
+    con.close()
 
 # / --- Функции ---
 
