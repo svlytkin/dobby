@@ -44,7 +44,7 @@ api_token = app.your_token
 bot = telebot.TeleBot(api_token)
 
 interval = 5 #интвервал проверки базы данных в секундах
-tz_delta = 0 #временно делаю мск таймзону
+tz_delta = app.tz_delta #временно делаю мск таймзону
 default_time = 9 # время, во сколько ставится напоминание по умолчанию, если не задано время
 default_time_str = '090000'
 dic = defaultdict(list)
@@ -177,7 +177,7 @@ def search_date_pattern(string_to_search):
                 clear_value = rem_date
             elif 'td_' in key:
                 print('td')
-                if any(x in item for x in sep):
+                if any(x in item for x in ['-', '–', '/', 'го']):
                     clear_value = re.sub('[-–/(го)]', '/', item)
                     print(item, 'item')
                     days, months, years, *oth = clear_value.split('/') + ['']
