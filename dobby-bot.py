@@ -66,10 +66,13 @@ except sqlite3.Error as e:
     print(u'Ошибка при подключении к базе %s' % DB)
     sys.exit(1)
 
-# try:
-#   cur.execute("SELECT rowid from reminders limit 0,1") # выполняем запрос к базе данных – проверяем, есть такая база или нет
-# except sqlite3.Error as e :  
-#   sql = """CREATE TABLE "reminders" ("chat_id" ,"messages", "created_at" DATETIME, "remind_at" DATETIME)"""
+try:
+    cur.execute("SELECT rowid from reminders limit 0,1") # выполняем запрос к базе данных – проверяем, есть такая база или нет
+    con.close()
+except sqlite3.Error as e :  
+    sql = """CREATE TABLE "reminders" ("chat_id" ,"messages", "created_at" DATETIME, "remind_at" DATETIME)"""
+    con.close()
+
 
 # --- Функции ---
 class RussianParserInfo(parser.parserinfo):
@@ -167,8 +170,9 @@ def search_date_pattern(string_to_search):
                 days, months, years, *oth = clear_value.split('/') + ['']
                 days = int(days)
                 months = datetime.now().month if months == '' else int(months)
+                months = 1 if months > 12 else months
                 years = datetime.now().year if years == '' else int(years)
-                rem_date = rem_date.replace(day = days, month = months, year = years)
+                rem_date = rem_date.replace(day = days, month = months, year = years)  
                 rem_date = rem_date + relativedelta(months=1) if datetime.now() > rem_date else rem_date
                 clear_value = rem_date
             elif 'td_' in key:
