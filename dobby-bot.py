@@ -9,6 +9,7 @@
 # [✓] преобразовывать даты в даты, а время в время
 # [✓] поменять время в пн, вт итд на 9 утра
 # [✓] сделать даты 30го
+# [] 12-13 функция, которая говорит о неправильном формате и логирует неправильные сообщения, в идеале присылает их мне сразу
 # [] 1267 у меня возвращает 12часов 67минут, минуты должны быть между 0 и 59
 # [] сделать относительные даты – завтра, вечером, днем, утром, через неделю, через мес, через Х часов/минут/?секунд?
 # [] отменить последнее действие через клавиатуру и текст
@@ -214,24 +215,24 @@ def extract_date(chat_message):
         minutes = int(dic["rem_time"][-1][2:4])
         seconds = int(dic["rem_time"][-1][4:6])
         remind_at = dic["rem_date"][-1].replace(hour = hours, minute = minutes, second = seconds, microsecond=0)
-        remind_at = remind_at + timedelta(days=1) if datetime.now() > remind_at else remind_at
+        remind_at = remind_at + tz_delta + timedelta(days=1) if datetime.now() > remind_at else remind_at
         # [] если дата больше сегодня то + месяц       
         # + не переносить время, типа если уже больще 9 утра       
         print(remind_at, 'ext_date')
         try:
             remind_at, not_date_list = parser.parse(chat_message, default=datetime.now().replace(hourdefault_time, minute = 0, second = 0, microsecond = 0), parserinfo=RussianParserInfo(), fuzzy_with_tokens=True) # ищем дату в сообщении
-            remind_at = remind_at.replace(hour = hours, minute = minutes, second = seconds, microsecond=0)
+            remind_at = remind_at.replace(hour = hours, minute = minutes, second = seconds, microsecond=0) + tz_delta
             case = 'dateutil + custom date'
         except:
             case = 'custom date'
     except:
         try:
-            remind_at, not_date_list = parser.parse(chat_message, default=datetime.now().replace(hour = default_time, minute = 0, second = 0, microsecond = 0), parserinfo=RussianParserInfo(), fuzzy_with_tokens=True) # ищем дату в сообщении
+            remind_at, not_date_list = parser.parse(chat_message, default=datetime.now().replace(hour = default_time, minute = 0, second = 0, microsecond = 0), parserinfo=RussianParserInfo(), fuzzy_with_tokens=True) + tz_delta # ищем дату в сообщении
             case = 'dateutil date'
         except:
             remind_at = datetime.now().replace(hour=default_time, minute=0, second=0,  microsecond=0)
             if datetime.now() > remind_at:
-                remind_at = remind_at + timedelta(days=1)
+                remind_at = remind_at + timedelta(days=1) + tz_delta
             case = 'no date'
     return remind_at, not_date_list, case, chat_message 
 
