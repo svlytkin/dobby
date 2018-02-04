@@ -247,6 +247,7 @@ def extract_date(check_message):
             for item in itertools.chain.from_iterable(nocut_values):
                 mes_cut = mes_cut.replace(item, '')
             remind_at, not_date_list = parser.parse(mes_cut, default=datetime.now().replace(hour = default_time, minute = 0, second = 0, microsecond = 0), parserinfo=RussianParserInfo(), fuzzy_with_tokens=True) # ищем дату в сообщении
+            not_date_list = ' '.join(x.strip() for x in not_date_list)
             case = 'dateutil date'
         except:
             case = 'no date'
@@ -258,6 +259,7 @@ def extract_date(check_message):
                 mes_cut = mes_cut.replace(item, '')
             dateutil_date, not_date_list = parser.parse(mes_cut, default=datetime.now().replace(hour = default_time, minute = 0, second = 0, microsecond = 0), parserinfo=RussianParserInfo(), fuzzy_with_tokens=True) # ищем дату в сообщении
             remind_at = dateutil_date.replace(hour = remind_at.hour, minute = remind_at.minute, second = remind_at.second, microsecond=0)
+            not_date_list = ' '.join(x.strip() for x in not_date_list)
             case = 'dateutil + custom date'
         except:
             case = 'custom date'
@@ -322,7 +324,9 @@ def upd_reminder(message):
     last_reminder = list(last_reminder[-1])
     if last_message[-1] < last_reminder[-1]: #[] -1  – это таймстэмп, когда создан, лучше сюда переменную всатавить, чтобы не потерялся, если случайно перенесу столбец с таймстэмпом
         sql_commit('insert into reminders (user_id, chat_id, messages, remind_at, message_id, created_at) values ("{}", "{}", "{}", "{}", "{}", "{}")'.format(last_reminder[0], last_reminder[1], last_reminder[2], upd_remind_at, message.message_id, int(datetime.today().timestamp())))
+        mes_cut_date = extract_date(last_reminder[2])[1]
         bot.send_message(last_reminder[1], 'перенёс на {}  ·  {}'.format(datetime.strftime(upd_remind_at, "%-H:%M, %a %-d %B"), check_message_len(last_reminder[2])))
+        print('mes_cut_date update OLD reminder')
         print('update NEW reminder')
     else:
         sql_commit('update reminders set remind_at = "{}" where (user_id = "{}") and (chat_id = "{}") and (rowid = "{}")'.format(upd_remind_at,last_message[1], last_message[2], last_message[0]))
