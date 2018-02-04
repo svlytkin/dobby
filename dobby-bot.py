@@ -309,7 +309,7 @@ def reply_upd(message):
         upd_message = list(upd_message[-1])
         sql_commit('update reminders set remind_at = "" where (message_id = "{}") and (chat_id = "{}") and (rowid = "{}")'.format(upd_message[5], upd_message[2], upd_message[0]))
     sql_commit('insert into reminders (user_id, chat_id, messages, remind_at, message_id, created_at) values ("{}", "{}", "{}", "{}", "{}", "{}")'.format(reply_mes.from_user.id, reply_mes.chat.id, reply_mes.text, upd_remind_at, reply_mes.message_id, int(datetime.today().timestamp())))
-    mes_cut_date = extract_date(reply_mes)[1]
+    mes_cut_date = extract_date(reply_mes.text)[1]
     print('mes_cut_date reply')
     bot.send_message(reply_mes.chat.id, 'перенёс на {}  ·  {}'.format(datetime.strftime(upd_remind_at, "%-H:%M, %a %-d %B"), check_message_len(mes_cut_date)))
     
