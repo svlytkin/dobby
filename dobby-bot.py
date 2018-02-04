@@ -30,7 +30,7 @@
 # [] дэйтутил вырезает цифры 40/12 в идеале вырезать самому и вставлять на место, то же будет с телефоном и тд
 # [] 30125 лыовст 35345 - вырезает цифры, похожие на время и не возвращает
 #    напомню в 3:53, пн 5 февраля  ·  лыовс...
-# тестовый лист test = ['12 1-1', 'лвоамам 2 34 05']
+# тестовый лист test = ['12 1-1', 'лвоамам 2 34 05'] вход, должно быть, выход, итог
 
 import app
 import re
@@ -312,7 +312,6 @@ def reply_upd(message):
     bot.send_message(reply_mes.chat.id, 'перенёс на {}  ·  {}'.format(datetime.strftime(upd_remind_at, "%-H:%M, %a %-d %B"), check_message_len(mes_cut_date)))
     
 @bot.message_handler(func=only_date_in_mes)
-@bot.message_handler(regexp="^!.+")
 def upd_reminder(message):
     upd_remind_at = extract_date(message.text)[0]
     print(message.text, 'upd_reminder')
@@ -354,7 +353,7 @@ def send_reminder():
     con = sqlite3.connect(DB)
     cur = con.cursor()
     reminders = sql_fetchall('select user_id, chat_id, messages, message_id, created_at from reminders where (remind_at >= "{}") and (remind_at < "{}")'.format(datetime.strftime(datetime.now()+timedelta(hours=tz_delta), "%Y-%m-%d %H:%M:%S"), datetime.strftime(datetime.now()+timedelta(seconds=interval)+timedelta(hours=tz_delta), "%Y-%m-%d %H:%M:%S")))
-    print('select user_id, chat_id, messages, message_id, created_at from reminders where (remind_at >= "{}") and (remind_at < "{}")'.format(datetime.strftime(datetime.now()+timedelta(hours=tz_delta), "%Y-%m-%d %H:%M:%S"), datetime.strftime(datetime.now()+timedelta(seconds=interval)+timedelta(hours=tz_delta), "%Y-%m-%d %H:%M:%S")))
+    # print('select user_id, chat_id, messages, message_id, created_at from reminders where (remind_at >= "{}") and (remind_at < "{}")'.format(datetime.strftime(datetime.now()+timedelta(hours=tz_delta), "%Y-%m-%d %H:%M:%S"), datetime.strftime(datetime.now()+timedelta(seconds=interval)+timedelta(hours=tz_delta), "%Y-%m-%d %H:%M:%S")))
     for reminder in reminders:
         # [] вырезать слова напомни / напомнить, в, через, след
         try:
