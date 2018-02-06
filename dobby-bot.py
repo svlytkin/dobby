@@ -312,9 +312,11 @@ def reply_upd(message):
     mes_cut_date = extract_date(reply_mes.text)[1]
     print('mes_cut_date reply')
     bot.send_message(reply_mes.chat.id, 'перенёс на {}  ·  {}'.format(datetime.strftime(upd_remind_at, "%-H:%M, %a %-d %B"), check_message_len(mes_cut_date)))
-    
+
+@bot.edited_message_handler()    
 @bot.message_handler(func=only_date_in_mes)
 def upd_reminder(message):
+    print (message)
     upd_remind_at = extract_date(message.text)[0]
     print(message.text, 'upd_reminder')
     last_message = sql_fetchall('select rowid, * from reminders where (user_id = "{}") and (chat_id = "{}") order by created_at desc limit 1'.format(message.from_user.id, message.chat.id))
@@ -328,6 +330,15 @@ def upd_reminder(message):
         bot.send_message(last_reminder[1], 'перенёс на {}  ·  {}'.format(datetime.strftime(upd_remind_at, "%-H:%M, %a %-d %B"), check_message_len(last_reminder[2])))
         print('mes_cut_date update OLD reminder')
         print('update NEW reminder')
+    elif message.edit_date:
+        # возможно ниже нужен try, потому что по каким то причинам сообщения может не оказаться в базе + искать лучше не по rowid а message_id
+        try:
+            sql_commit('update reminders set remind_at = "{}", messages = "{}" where (user_id = "{}") and (chat_id = "{}") and (message_id = "{}")'.format(upd_remind_at, message.text, message.from_user.id, message.chat.id, message.message_id))
+            mes_cut_date = extract_date(message.text)[1]
+            print('mes_cut_date update edited message')
+            bot.send_message(message.chat.id, 'перенёс на {}  ·  {}'.format(datetime.strftime(upd_remind_at,  "%-H:%M, %a %-d %B"), check_message_len(mes_cut_date)))
+        except ValueError as e:
+            bot.send_message(message.chat.id, 'не нашёл сообщение в базе :(  ·  {}'.format(check_message_len(mes_cut_date)))
     else:
         sql_commit('update reminders set remind_at = "{}" where (user_id = "{}") and (chat_id = "{}") and (rowid = "{}")'.format(upd_remind_at,last_message[1], last_message[2], last_message[0]))
         mes_cut_date = extract_date(last_message[3])[1]
