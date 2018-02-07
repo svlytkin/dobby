@@ -398,5 +398,5 @@ while True:
         bot.polling(none_stop=True)
     except Exception as e:
         sleep = 15
-        logger.error("Error on polling. Retry in {} secs\n{} ".format(sleep, ee())
+        logger.error("Error on polling. Retry in {} secs\n{} ".format(sleep, ee()))
         time.sleep(sleep)
