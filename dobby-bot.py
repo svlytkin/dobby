@@ -393,4 +393,10 @@ def call_repeatedly(interval, func):
     
 cancel_future_calls = call_repeatedly(interval, send_reminder)  
 
-bot.polling(none_stop=True)
+while True:
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        sleep = 15
+        logger.error("Error on polling. Retry in {} secs\n{} ".format(sleep, ee())
+        time.sleep(sleep)
