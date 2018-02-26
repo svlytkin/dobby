@@ -54,7 +54,7 @@ app.debug = True
 api_token = apppp.your_token
 bot = telebot.TeleBot(api_token)
 
-interval = 4 #интвервал проверки базы данных в секундах
+interval = 5 #интвервал проверки базы данных в секундах
 tz_delta = app.tz_delta #временно делаю мск таймзону
 default_time = 9 # время, во сколько ставится напоминание по умолчанию, если не задано время
 default_remind_at = datetime.now().replace(hour = default_time, minute = 0, second = 0, microsecond = 0) + timedelta(hours=tz_delta)
