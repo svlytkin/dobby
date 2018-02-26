@@ -32,7 +32,7 @@
 #    напомню в 3:53, пн 5 февраля  ·  лыовс...
 # тестовый лист test = ['12 1-1', 'лвоамам 2 34 05'] вход, должно быть, выход, итог
 
-import app
+import apppp
 import re
 import sqlite3, os, sys
 import locale
@@ -45,9 +45,13 @@ from dateutil.relativedelta import relativedelta
 from threading import Event, Thread
 from collections import defaultdict
 import itertools
+from flask import Flask, request
+
+app = Flask(__name__)
+app.debug = True
 
 # подключаем бота
-api_token = app.your_token
+api_token = apppp.your_token
 bot = telebot.TeleBot(api_token)
 
 interval = 5 #интвервал проверки базы данных в секундах
