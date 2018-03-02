@@ -432,4 +432,4 @@ bot.set_webhook(url=WEBHOOK_URL_BASE+WEBHOOK_URL_PATH,
 app.run(host=apppp.WEBHOOK_LISTEN,
         port=apppp.WEBHOOK_PORT,
         ssl_context=(apppp.WEBHOOK_SSL_CERT, apppp.WEBHOOK_SSL_PRIV),
-        debug=True)
+        debug=False)
