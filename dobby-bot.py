@@ -46,16 +46,40 @@ from threading import Event, Thread
 from collections import defaultdict
 import itertools
 from flask import Flask, request
+import logging
+
+api_token = apppp.your_token
+bot = telebot.TeleBot(api_token)
+
+WEBHOOK_URL_BASE = "https://%s:%s" % (apppp.WEBHOOK_HOST, apppp.WEBHOOK_PORT)
+WEBHOOK_URL_PATH = "/%s/" % (apppp.your_token)
+
+logger = telebot.logger
+telebot.logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 app.debug = True
 
-# подключаем бота
-api_token = apppp.your_token
-bot = telebot.TeleBot(api_token)
+# Empty webserver index, return nothing, just http 200
+@app.route('/', methods=['GET', 'HEAD'])
+def index():
+    return ''
+
+
+# Process webhook calls
+@app.route(WEBHOOK_URL_PATH, methods=['POST'])
+def webhook():
+    if flask.request.headers.get('content-type') == 'application/json':
+        json_string = flask.request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return ''
+    else:
+        flask.abort(403)
+
 
 interval = 5 #интвервал проверки базы данных в секундах
-tz_delta = app.tz_delta #временно делаю мск таймзону
+tz_delta = apppp.tz_delta #временно делаю мск таймзону
 default_time = 9 # время, во сколько ставится напоминание по умолчанию, если не задано время
 default_remind_at = datetime.now().replace(hour = default_time, minute = 0, second = 0, microsecond = 0) + timedelta(hours=tz_delta)
 dic = defaultdict(list)
@@ -300,7 +324,7 @@ def check_reply(message):
         return False
 # / --- Функции ---
 
-@bot.message_handler(func=check_reply)
+@bot.message_handler(func=check_reply, content_types=["text", "audio", "document", "photo", "sticker", "video", "video_note", "voice", "location", "contact"])
 def reply_upd(message):
     reply_mes = message.reply_to_message
     print (reply_mes, 'reply_mes')
@@ -317,8 +341,8 @@ def reply_upd(message):
     print('mes_cut_date reply')
     bot.send_message(reply_mes.chat.id, 'перенёс на {}  ·  {}'.format(datetime.strftime(upd_remind_at, "%-H:%M, %a %-d %B"), check_message_len(mes_cut_date)))
 
-@bot.edited_message_handler()    
-@bot.message_handler(func=only_date_in_mes)
+@bot.edited_message_handler(func=lambda message: True, content_types=["text", "audio", "document", "photo", "sticker", "video", "video_note", "voice", "location", "contact"])    
+@bot.message_handler(func=only_date_in_mes, content_types=["text", "audio", "document", "photo", "sticker", "video", "video_note", "voice", "location", "contact"])
 def upd_reminder(message):
     print (message)
     upd_remind_at = extract_date(message.text)[0]
@@ -349,7 +373,7 @@ def upd_reminder(message):
         print('mes_cut_date update OLD reminder')
         bot.send_message(message.chat.id, 'перенёс на {}  ·  {}'.format(datetime.strftime(upd_remind_at,  "%-H:%M, %a %-d %B"), check_message_len(mes_cut_date)))
 
-@bot.message_handler()
+@bot.message_handler(func=lambda message: True, content_types=["text", "audio", "document", "photo", "sticker", "video", "video_note", "voice", "location", "contact"])
 def add_message(message): # Название функции не играет никакой роли, в принципе
     # записываем сообщение, дату создания и дату напоминания в базу
     # remind_at, not_date_list = parser.parse(message.text, parserinfo=RussianParserInfo(), fuzzy_with_tokens=True) # ищем дату в сообщении
@@ -397,5 +421,15 @@ def call_repeatedly(interval, func):
     
 cancel_future_calls = call_repeatedly(interval, send_reminder)  
 
+# Remove webhook, it fails sometimes the set if there is a previous webhook
+bot.remove_webhook()
 
-bot.polling(none_stop=True)
+# Set webhook
+bot.set_webhook(url=WEBHOOK_URL_BASE+WEBHOOK_URL_PATH,
+                certificate=open(apppp.WEBHOOK_SSL_CERT, 'r'))
+
+# Start flask server
+app.run(host=apppp.WEBHOOK_LISTEN,
+        port=apppp.WEBHOOK_PORT,
+        ssl_context=(apppp.WEBHOOK_SSL_CERT, apppp.WEBHOOK_SSL_PRIV),
+        debug=True)
