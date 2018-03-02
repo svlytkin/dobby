@@ -58,7 +58,7 @@ logger = telebot.logger
 telebot.logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
-app.debug = True
+app.debug = False
 
 # Empty webserver index, return nothing, just http 200
 @app.route('/', methods=['GET', 'HEAD'])
