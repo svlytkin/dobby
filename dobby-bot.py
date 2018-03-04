@@ -407,7 +407,7 @@ def send_reminder():
             con.close()
             mes_cut_date = extract_date(reminder[2])[1]
             print('mes_cut_date send reminder')
-            bot.send_message(reminder[1], f"!! {mes_cut_date}")
+            # bot.send_message(reminder[1], f"!! {mes_cut_date}")
         except ValueError as e:
             pass
 
