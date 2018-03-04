@@ -32,6 +32,9 @@
 #    напомню в 3:53, пн 5 февраля  ·  лыовс...
 # тестовый лист test = ['12 1-1', 'лвоамам 2 34 05'] вход, должно быть, выход, итог
 
+#!/usr/bin/python3
+
+import sys
 import apppp
 import re
 import sqlite3, os, sys
