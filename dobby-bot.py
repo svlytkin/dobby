@@ -57,7 +57,7 @@ sslify = SSLify(app)
 api_token = apppp.your_token
 bot = telebot.TeleBot(api_token, threaded=False, num_threads=1)
 
-URL = 'https://svlytkin.pythonanywhere.com/'
+URL = 'https://45.32.234.14/'
 
 @app.route('/' + api_token, methods=['POST'])
 def getMessage():
