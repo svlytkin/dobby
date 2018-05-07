@@ -50,14 +50,20 @@ from flask import request
 from flask_sslify import SSLify
 import time
 
-app = Flask(__name__)
-sslify = SSLify(app)
+import logging
 
-# подключаем бота
 api_token = apppp.your_token
-bot = telebot.TeleBot(api_token, threaded=False, num_threads=1)
+bot = telebot.TeleBot(api_token)
 
-URL = 'https://45.32.234.14/'
+WEBHOOK_URL_BASE = "https://%s:%s" % (apppp.WEBHOOK_HOST, apppp.WEBHOOK_PORT)
+WEBHOOK_URL_PATH = "/%s/" % (apppp.your_token)
+
+# logger = telebot.logger
+# telebot.logger.setLevel(logging.INFO)
+
+app = Flask(__name__)
+app.debug = False
+
 
 @app.route('/' + api_token, methods=['POST'])
 def getMessage():
@@ -68,9 +74,26 @@ def getMessage():
 def webhook():
     bot.remove_webhook()
     time.sleep(0.4)
-    print(URL + api_token)
-    bot.set_webhook(url = URL + api_token)
+    print(WEBHOOK_URL_BASE + api_token)
+    bot.set_webhook(url = WEBHOOK_URL_BASE + api_token)
     return "!", 200
+
+# # Empty webserver index, return nothing, just http 200
+# @app.route('/', methods=['GET', 'HEAD'])
+# def index():
+#     return ''
+
+
+# # Process webhook calls
+# @app.route(WEBHOOK_URL_PATH, methods=['POST'])
+# def webhook():
+#     if flask.request.headers.get('content-type') == 'application/json':
+#         json_string = flask.request.get_data().decode('utf-8')
+#         update = telebot.types.Update.de_json(json_string)
+#         bot.process_new_updates([update])
+#         return ''
+#     else:
+#         flask.abort(403)
 
 interval = 5 #интвервал проверки базы данных в секундах
 tz_delta = apppp.tz_delta #временно делаю мск таймзону
@@ -415,8 +438,15 @@ def call_repeatedly(interval, func):
 
 cancel_future_calls = call_repeatedly(interval, send_reminder)
 
-#app.run(host='0.0.0.0',
-# 			port=8443,
-# 			debug=True,
-# 			)
+# Remove webhook, it fails sometimes the set if there is a previous webhook
+bot.remove_webhook()
 
+# Set webhook
+bot.set_webhook(url=WEBHOOK_URL_BASE+WEBHOOK_URL_PATH,
+                certificate=open(apppp.WEBHOOK_SSL_CERT, 'r'))
+
+# Start flask server
+app.run(host=apppp.WEBHOOK_LISTEN,
+        port=apppp.WEBHOOK_PORT,
+        ssl_context=(apppp.WEBHOOK_SSL_CERT, apppp.WEBHOOK_SSL_PRIV),
+        debug=False)
