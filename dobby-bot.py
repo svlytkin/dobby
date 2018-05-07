@@ -5,7 +5,7 @@
 #   [✓] через поиск только даты в сообщении, и предыдущее отправил бот
 #   [✓] сделать обновление в бд, а не дописывание
 # [✓] ввод даты после отправки сообщения
-# [✓] дописывать 0 в начале (или придумать другой вариант), если цифра одна 2 15 | ?215? 
+# [✓] дописывать 0 в начале (или придумать другой вариант), если цифра одна 2 15 | ?215?
 # [✓] преобразовывать даты в даты, а время в время
 # [✓] поменять время в пн, вт итд на 9 утра
 # [✓] сделать даты 30го
@@ -19,7 +19,7 @@
 # сервер
 # [] сделать чтобы работал на сервере
 # [] чтобы в телеграм приходили ошибки
- 
+
 # украшения
 # [✓] вывести дату и время в норм формате в сообщении, что принял напоминание – не понятно как сделать вывод человеческого дня "четверг", "мая" и тд
 # [✓] убрать дату из сообщения напоминания
@@ -45,17 +45,35 @@ from dateutil.relativedelta import relativedelta
 from threading import Event, Thread
 from collections import defaultdict
 import itertools
-from flask import Flask, request
+from flask import Flask
+from flask import request
+from flask_sslify import SSLify
+import time
 
 app = Flask(__name__)
-app.debug = True
+sslify = SSLify(app)
 
 # подключаем бота
 api_token = apppp.your_token
-bot = telebot.TeleBot(api_token)
+bot = telebot.TeleBot(api_token, threaded=False, num_threads=1)
+
+URL = 'https://svlytkin.pythonanywhere.com/'
+
+@app.route('/' + api_token, methods=['POST'])
+def getMessage():
+    bot.process_new_updates([telebot.types.Update.de_json(request.get_data().decode("utf-8"))])
+    return "!", 200
+
+@app.route("/")
+def webhook():
+    bot.remove_webhook()
+    time.sleep(0.4)
+    print(URL + api_token)
+    bot.set_webhook(url = URL + api_token)
+    return "!", 200
 
 interval = 5 #интвервал проверки базы данных в секундах
-tz_delta = app.tz_delta #временно делаю мск таймзону
+tz_delta = apppp.tz_delta #временно делаю мск таймзону
 default_time = 9 # время, во сколько ставится напоминание по умолчанию, если не задано время
 default_remind_at = datetime.now().replace(hour = default_time, minute = 0, second = 0, microsecond = 0) + timedelta(hours=tz_delta)
 dic = defaultdict(list)
@@ -80,7 +98,7 @@ except sqlite3.Error as e:
 try:
     cur.execute("SELECT rowid from reminders limit 0,1") # выполняем запрос к базе данных – проверяем, есть такая база или нет
     con.close()
-except sqlite3.Error as e :  
+except sqlite3.Error as e :
     sql = """CREATE TABLE "reminders" ("chat_id" ,"messages", "created_at" DATETIME, "remind_at" DATETIME)"""
     con.close()
 
@@ -95,13 +113,13 @@ class RussianParserInfo(parser.parserinfo):
                 ("сб", "Суббота"),
                 ("вс", "Воскресенье")]
 
-    MONTHS = [('Jan', 'January', 'ян', 'янв', 'января', 'январь'), 
-                ('Feb', 'February', 'фев', 'февраля', 'февраль'), 
-                ('Mar', 'March', 'мар', 'марта', 'март'), 
-                ('Apr', 'April', 'апр', 'апреля', 'апрель'), 
-                ('May', 'мая', 'май'), 
-                ('Jun', 'June', 'июня', 'июнь'), 
-                ('Jul', 'July', 'июля', 'июль'), 
+    MONTHS = [('Jan', 'January', 'ян', 'янв', 'января', 'январь'),
+                ('Feb', 'February', 'фев', 'февраля', 'февраль'),
+                ('Mar', 'March', 'мар', 'марта', 'март'),
+                ('Apr', 'April', 'апр', 'апреля', 'апрель'),
+                ('May', 'мая', 'май'),
+                ('Jun', 'June', 'июня', 'июнь'),
+                ('Jul', 'July', 'июля', 'июль'),
                 ('Aug', 'August', 'авг', 'августа', 'август'),
                 ('Sep', 'Sept', 'September', 'сент', 'сен', 'сентября', 'сентябрь'),
                 ('Oct', 'October', 'окт', 'октября', 'октябрь'),
@@ -116,7 +134,7 @@ class RussianParserInfo(parser.parserinfo):
     AMPM = [("am", "a", "утра"),
             ("pm", "p", "вечера")]
     UTCZONE = ["UTC", "GMT", "Z"]
-    PERTAIN = ["of"]  
+    PERTAIN = ["of"]
 
 def sql_fetchall(sql):
     con = sqlite3.connect(DB)
@@ -134,7 +152,7 @@ def sql_commit(sql):
     con.close()
 
 def check_message_len(message_to_check):
-    not_date_str = ''.join(message_to_check) 
+    not_date_str = ''.join(message_to_check)
     if len(not_date_str)>25:
         message_to_send = not_date_str[:25].rstrip()+'...'
     else:
@@ -173,7 +191,7 @@ def search_date_pattern(string_to_search):
             if 'time' in key:
                 clear_value = "".join(filter(str.isdigit, item))
                 print (clear_value, 'f is digit')
-                clear_value = ('0' + clear_value if len(clear_value)%2 == 1 else clear_value) 
+                clear_value = ('0' + clear_value if len(clear_value)%2 == 1 else clear_value)
                 clear_value = "{:<06}".format(clear_value)
                 hours, minutes, seconds = [int(clear_value[i:i+2]) for i in range(0, len(clear_value), 2)] #разбиваю строку по 2 символа и поледовательно присваиваю их часам, мин, сек
                 try:
@@ -218,7 +236,7 @@ def search_date_pattern(string_to_search):
                     try:
                         rem_at = rem_at.replace(day = days, month = months, year = years)
                     except:
-                        key = 'nocut_' + key 
+                        key = 'nocut_' + key
                 else:
                     clear_value = "".join(filter(str.isdigit, item))
                     clear_value = ('0' + clear_value if len(clear_value)%2 == 1 else clear_value)
@@ -243,7 +261,7 @@ def extract_date(check_message):
     not_date_list = chat_message
     print(dic, 'dic ex')
     remind_at = dic["rem_at"][-1] if 'rem_at' in dic else default_remind_at
-    remind_at = remind_at + timedelta(days=1) if (datetime.now() + timedelta(hours=tz_delta)) > remind_at else remind_at      
+    remind_at = remind_at + timedelta(days=1) if (datetime.now() + timedelta(hours=tz_delta)) > remind_at else remind_at
     if chat_message == check_message:
         try:
             mes_cut = chat_message
@@ -268,7 +286,7 @@ def extract_date(check_message):
         except:
             case = 'custom date'
     print('remind_at:', remind_at, 'case:', case, 'not_date_list:', not_date_list, 'chat_message:', chat_message, 'check_message:', check_message)
-    return remind_at, not_date_list, case, chat_message 
+    return remind_at, not_date_list, case, chat_message
 
 def only_date_in_mes(message):
     print('only_date_in_mes', message.text)
@@ -277,7 +295,7 @@ def only_date_in_mes(message):
     if mes_cut:
         nocut_values = [value for key, value in dic.items() if 'nocut' in key]
         for item in itertools.chain.from_iterable(nocut_values):
-            mes_cut = mes_cut.replace(item, '') 
+            mes_cut = mes_cut.replace(item, '')
         # print (mes_cut, 'mes_cut only_date_in_mes')
         try:
             date, list2 = parser.parse(mes_cut, default=datetime.now().replace(hour = default_time, minute = 0, second = 0, microsecond = 0), parserinfo=RussianParserInfo(), fuzzy_with_tokens=True) #list2 - список слов без даты
@@ -306,7 +324,7 @@ def reply_upd(message):
     print (reply_mes, 'reply_mes')
     upd_remind_at = extract_date(message.text)[0]
     print(upd_remind_at, 'upd_remind_at reply_upd')
-    # поменять на ифы, чтобы не пропускать ошибки 
+    # поменять на ифы, чтобы не пропускать ошибки
     upd_message = sql_fetchall('select rowid, * from reminders where (message_id = "{}") and (chat_id = "{}") order by created_at desc limit 1'.format(reply_mes.message_id, reply_mes.chat.id))
     print (upd_message, 'last_message')
     if upd_message:
@@ -317,7 +335,7 @@ def reply_upd(message):
     print('mes_cut_date reply')
     bot.send_message(reply_mes.chat.id, 'перенёс на {}  ·  {}'.format(datetime.strftime(upd_remind_at, "%-H:%M, %a %-d %B"), check_message_len(mes_cut_date)))
 
-@bot.edited_message_handler()    
+@bot.edited_message_handler()
 @bot.message_handler(func=only_date_in_mes)
 def upd_reminder(message):
     print (message)
@@ -365,8 +383,8 @@ def add_message(message): # Название функции не играет н
         con = sqlite3.connect(DB)
         cur = con.cursor()
         sql_commit('insert into reminders (user_id, chat_id, messages, remind_at, message_id, created_at) values ("{}", "{}", "{}", "{}", "{}", "{}")'.format(message.from_user.id, message.chat.id, message.text, remind_at, message.message_id, int(datetime.today().timestamp())))
-        # bot.reply_to(message, 'ок, напомню в {}'.format(datetime.strftime(remind_at,  "%H:%M, %a %d %B"))) 
-        bot.send_message(message.chat.id, 'напомню в {}  ·  {}'.format(datetime.strftime(remind_at,  "%-H:%M, %a %-d %B"), check_message_len(not_date_list))) 
+        # bot.reply_to(message, 'ок, напомню в {}'.format(datetime.strftime(remind_at,  "%H:%M, %a %d %B")))
+        bot.send_message(message.chat.id, 'напомню в {}  ·  {}'.format(datetime.strftime(remind_at,  "%-H:%M, %a %-d %B"), check_message_len(not_date_list)))
 
 def send_reminder():
     con = sqlite3.connect(DB)
@@ -392,10 +410,13 @@ def call_repeatedly(interval, func):
     def loop():
         while not stopped.wait(interval):
             func()
-    Thread(target=loop).start()    
+    Thread(target=loop).start()
     return stopped.set
-    
-cancel_future_calls = call_repeatedly(interval, send_reminder)  
 
+cancel_future_calls = call_repeatedly(interval, send_reminder)
 
-bot.polling(none_stop=True)
+#app.run(host='0.0.0.0',
+# 			port=8443,
+# 			debug=True,
+# 			)
+
